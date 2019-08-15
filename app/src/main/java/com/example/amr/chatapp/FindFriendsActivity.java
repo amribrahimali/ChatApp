@@ -11,7 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.squareup.picasso.Picasso;
@@ -49,7 +50,7 @@ public class FindFriendsActivity extends AppCompatActivity
     }
 
 
-    /**@Override
+    @Override
     protected void onStart()
     {
         super.onStart();
@@ -111,8 +112,9 @@ public class FindFriendsActivity extends AppCompatActivity
 
             userName = itemView.findViewById(R.id.user_profile_name);
             userStatus = itemView.findViewById(R.id.user_status);
-            profileImage = itemView.findViewById(R.id.users_profile_image);
+            profileImage = itemView.findViewById(R.id.users_profile_img);
         }
-    }**/
+    }
 }
+
 
