@@ -29,7 +29,7 @@ public class TabsAccessorAdapter extends FragmentPagerAdapter {
                 return contactsFragment;
 
             case 3:
-                RequestFragment requestFragment = new RequestFragment();
+                RequestsFragment requestFragment = new RequestsFragment();
                 return requestFragment;
 
                 default:
