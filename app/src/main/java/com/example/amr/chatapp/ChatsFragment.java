@@ -24,10 +24,6 @@ import com.squareup.picasso.Picasso;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-
-/**
- * A simple {@link Fragment} subclass.
- */
 public class ChatsFragment extends Fragment {
 
     private View PrivateChatsView ;
@@ -75,6 +71,7 @@ public class ChatsFragment extends Fragment {
                     @Override
                     protected void onBindViewHolder(@NonNull final ChatsViewHolder holder, int position, @NonNull Contacts model)
                     {
+                        final String[] retImage = {"default_image"};
                         final String usersIDs = getRef(position).getKey();
 
                         UsersRef.child(usersIDs).addValueEventListener(new ValueEventListener() {
@@ -85,8 +82,8 @@ public class ChatsFragment extends Fragment {
                                 {
                                     if(dataSnapshot.hasChild("image"))
                                     {
-                                        final String retImage = dataSnapshot.child("image").getValue().toString();
-                                        Picasso.get().load(retImage).placeholder(R.drawable.profile_image).into(holder.profileImage);
+                                        retImage[0] = dataSnapshot.child("image").getValue().toString();
+                                        Picasso.get().load(retImage[0]).placeholder(R.drawable.profile_image).into(holder.profileImage);
                                     }
 
                                     final String retName = dataSnapshot.child("name").getValue().toString();
@@ -102,6 +99,7 @@ public class ChatsFragment extends Fragment {
                                             Intent chatIntent = new Intent(getContext(),ChatActivity.class);
                                             chatIntent.putExtra("visit_user_id",usersIDs);
                                             chatIntent.putExtra("visit_user_name",retName);
+                                            chatIntent.putExtra("visit_image", retImage[0]);
                                             startActivity(chatIntent);
 
                                         }
