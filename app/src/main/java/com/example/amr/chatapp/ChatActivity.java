@@ -1,6 +1,7 @@
 package com.example.amr.chatapp;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,10 +15,15 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.squareup.picasso.Picasso;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -103,6 +109,32 @@ public class ChatActivity extends AppCompatActivity {
                     .child(messageSenderID).child(messageReceiverID).push();
 
             String messagePushID = userMessageKeyRef.getKey();
+
+            Map messageTextBody = new HashMap();
+            messageTextBody.put("message",messageText);
+            messageTextBody.put("type","text");
+            messageTextBody.put("from",messageSenderID);
+
+            Map messageBodyDetails = new HashMap();
+            messageBodyDetails.put(messageSenderRef + "/" + messagePushID,messageTextBody);
+            messageBodyDetails.put(messageReceiverRef + "/" + messagePushID,messageTextBody);
+
+            RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+                @Override
+                public void onComplete(@NonNull Task task) {
+                    if (task.isSuccessful())
+                    {
+                        Toast.makeText(ChatActivity.this, "Message Sent Successfully..", Toast.LENGTH_SHORT).show();
+                    }
+                    else 
+                    {
+                        Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                    }
+
+                    messageInputText.setText("");
+                }
+            });
+
         }
     }
 }
