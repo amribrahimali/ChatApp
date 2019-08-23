@@ -33,7 +33,6 @@
         android:layout_below="@+id/custom_profile_name"
         android:layout_marginTop="3dp"
         android:textColor="@android:color/background_light"
-        android:textStyle="bold"
         android:textSize="14sp"/>
 
 </RelativeLayout>

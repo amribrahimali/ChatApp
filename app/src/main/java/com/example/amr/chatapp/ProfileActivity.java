@@ -17,6 +17,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.util.HashMap;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -27,7 +29,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView userProfileName,userProfileStatus;
     private Button sendMessageRequestButton,declineMessageRequestButton;
 
-    private DatabaseReference UserRef,chatRequestRef,contactsRef;
+    private DatabaseReference UserRef,chatRequestRef,contactsRef,notificationRef;
     private FirebaseAuth mAuth;
 
     @Override
@@ -39,6 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
         UserRef = FirebaseDatabase.getInstance().getReference().child("Users");
         chatRequestRef = FirebaseDatabase.getInstance().getReference().child("Chat Requests");
         contactsRef = FirebaseDatabase.getInstance().getReference().child("Contacts");
+        notificationRef = FirebaseDatabase.getInstance().getReference().child("Notifications");
 
         receiverUserID = getIntent().getExtras().get("visit_user_id").toString();
         senderUserID = mAuth.getCurrentUser().getUid();
@@ -204,6 +207,7 @@ public class ProfileActivity extends AppCompatActivity {
                                         {
                                             if(task.isSuccessful())
                                             {
+
                                                 sendMessageRequestButton.setEnabled(true);
                                                 Current_state = "new";
                                                 sendMessageRequestButton.setText("Send Message");
@@ -319,9 +323,27 @@ public class ProfileActivity extends AppCompatActivity {
                                       {
                                           if(task.isSuccessful())
                                           {
-                                             sendMessageRequestButton.setEnabled(true);
-                                             Current_state = "request_sent";
-                                             sendMessageRequestButton.setText("Cancel Chat Request");
+                                              HashMap<String,String> chatNotificationMap = new HashMap<>();
+                                              chatNotificationMap.put("from",senderUserID);
+                                              chatNotificationMap.put("type","request");
+
+                                              //Random Key to notification
+                                              notificationRef.child(receiverUserID).push()
+                                                      .setValue(chatNotificationMap)
+                                                      .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                          @Override
+                                                          public void onComplete(@NonNull Task<Void> task)
+                                                          {
+                                                              if(task.isSuccessful())
+                                                              {
+                                                                  sendMessageRequestButton.setEnabled(true);
+                                                                  Current_state = "request_sent";
+                                                                  sendMessageRequestButton.setText("Cancel Chat Request");
+
+                                                              }
+
+                                                          }
+                                                      });
                                           }
                                       }
                                   });

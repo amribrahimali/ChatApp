@@ -25,6 +25,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.HashMap;
+
 public class MainActivity extends AppCompatActivity {
 
     private Toolbar mToolbar;
@@ -32,9 +36,9 @@ public class MainActivity extends AppCompatActivity {
     private TabLayout myTabLayout;
     private TabsAccessorAdapter myTabsAccessorAdapter;
 
-    private FirebaseUser currentUser;
     private FirebaseAuth mAuth;
     private DatabaseReference RootRef;
+    private String currentUserID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mAuth = FirebaseAuth.getInstance();
-        currentUser = mAuth.getCurrentUser();
         RootRef = FirebaseDatabase.getInstance().getReference();
 
         mToolbar = (Toolbar) findViewById(R.id.main_page_toolbar);
@@ -61,12 +64,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
         if(currentUser == null)
         {
             SendUserToLoginActivity();
         }
-        else{
+        else
+        {
+            UpdateUserStatus("online");
+
             VerifyUserExistance();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if(currentUser != null)
+        {
+            UpdateUserStatus("offline");
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if(currentUser != null)
+        {
+            UpdateUserStatus("offline");
         }
     }
 
@@ -122,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if(item.getItemId() == R.id.main_logout_option){
 
+            UpdateUserStatus("offline");
             mAuth.signOut();
             SendUserToLoginActivity();
         }
@@ -197,4 +230,29 @@ public class MainActivity extends AppCompatActivity {
         Intent findFriendsIntent = new Intent(MainActivity.this,FindFriendsActivity.class);
         startActivity(findFriendsIntent);
     }
+
+    private void UpdateUserStatus(String state)
+    {
+        String saveCurrentTime , saveCurrentDate;
+
+        Calendar calendar = Calendar.getInstance();
+
+        SimpleDateFormat currentDate = new SimpleDateFormat("MMM dd, yyyy");
+        saveCurrentDate = currentDate.format(calendar.getTime());
+
+        SimpleDateFormat currentTime = new SimpleDateFormat("hh:mm a");
+        saveCurrentTime = currentTime.format(calendar.getTime());
+
+        HashMap<String,Object> onlineStateMap = new HashMap<>();
+        onlineStateMap.put("time",saveCurrentTime);
+        onlineStateMap.put("date",saveCurrentDate);
+        onlineStateMap.put("state",state);
+
+        currentUserID = mAuth.getCurrentUser().getUid();
+
+        RootRef.child("Users").child(currentUserID).child("userState")
+                .updateChildren(onlineStateMap);
+
+    }
+
 }
