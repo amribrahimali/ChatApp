@@ -1,8 +1,14 @@
 package com.example.amr.chatapp;
 
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,6 +23,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,6 +33,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -48,6 +58,7 @@ public class ChatActivity extends AppCompatActivity {
     private ImageButton sendMessageButton,sendFilesButton;
     private EditText messageInputText;
     private RecyclerView userMessagesList;
+    private ProgressDialog loadingBar;
 
     private FirebaseAuth mAuth;
     private DatabaseReference RootRef;
@@ -56,6 +67,9 @@ public class ChatActivity extends AppCompatActivity {
     private LinearLayoutManager linearLayoutManager;
     private MessageAdapter messageAdapter;
     String saveCurrentTime , saveCurrentDate;
+    String checker ="", myUrl="";
+    private Uri fileUri;
+    private StorageTask uploadTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,8 +99,50 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         DisplayLastSeen();
+
+        sendFilesButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                CharSequence options[] = new CharSequence[]
+                        {
+                          "Images",
+                          "PDF Files",
+                          "Word Files"
+                        };
+                AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
+                builder.setTitle("Select the File Type");
+
+                builder.setItems(options, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i)
+                    {
+                       if(i == 0)
+                       {
+                           checker = "images";
+
+                           Intent intent = new Intent();
+                           intent.setAction(Intent.ACTION_GET_CONTENT);
+                           intent.setType("image/*");
+                           startActivityForResult(intent.createChooser(intent,"Select Image"),438);
+                       }
+                       if(i == 1)
+                       {
+                           checker = "pdf";
+                       }
+                       if(i == 2)
+                       {
+                           checker = "docx";
+                       }
+                    }
+                });
+
+                builder.show();
+
+            }
+        });
     }
-    
+
     private void InitializeControllers()
     {
         chatToolbar = (Toolbar) findViewById(R.id.chat_toolbar);
@@ -100,7 +156,7 @@ public class ChatActivity extends AppCompatActivity {
         View actionBarView = layoutInflater.inflate(R.layout.custom_chat_bar,null);
         actionBar.setCustomView(actionBarView);
 
-        userImage = (CircleImageView) findViewById(R.id.custom_profile_img);
+        userImage = (CircleImageView) findViewById(R.id.custom_profile_image);
         userName = (TextView) findViewById(R.id.custom_profile_name);
         userLastseen = (TextView) findViewById(R.id.custom_user_last_seen);
 
@@ -115,6 +171,8 @@ public class ChatActivity extends AppCompatActivity {
         userMessagesList.setLayoutManager(linearLayoutManager);
         userMessagesList.setAdapter(messageAdapter);
 
+        loadingBar = new ProgressDialog(this);
+
         Calendar calendar = Calendar.getInstance();
 
         SimpleDateFormat currentDate = new SimpleDateFormat("MMM dd, yyyy");
@@ -122,6 +180,102 @@ public class ChatActivity extends AppCompatActivity {
 
         SimpleDateFormat currentTime = new SimpleDateFormat("hh:mm a");
         saveCurrentTime = currentTime.format(calendar.getTime());
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == 438 && resultCode == RESULT_OK && data!= null && data.getData()!=null )
+        {
+            loadingBar.setTitle("Sending File");
+            loadingBar.setMessage("Please wait, We are sending this file...");
+            loadingBar.setCanceledOnTouchOutside(false);
+            loadingBar.show();
+
+            fileUri = data.getData();
+
+            if(!checker.equals("image"))
+            {
+
+            }
+            else if(checker.equals("image"))
+            {
+                StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Image Files");
+
+                final String messageSenderRef = "Messages/" + messageSenderID + "/" + messageReceiverID;
+                final String messageReceiverRef = "Messages/" + messageReceiverID + "/" + messageSenderID;
+
+                //Create Key
+                DatabaseReference userMessageKeyRef = RootRef.child("Messages")
+                        .child(messageSenderID).child(messageReceiverID).push();
+
+                final String messagePushID = userMessageKeyRef.getKey();
+
+                final StorageReference filePath = storageReference.child(messagePushID + "." + "jpg");
+
+                uploadTask = filePath.putFile(fileUri);
+                uploadTask.continueWithTask(new Continuation() {
+                    @Override
+                    public Object then(@NonNull Task task) throws Exception
+                    {
+                        if(!task.isSuccessful())
+                        {
+                            throw task.getException();
+                        }
+                        return filePath.getDownloadUrl();
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Uri> task)
+                    {
+                      if(task.isSuccessful())
+                      {
+                          Uri downloadUri = task.getResult();
+                          myUrl = downloadUri.toString();
+
+                          Map messageImageBody = new HashMap();
+                          messageImageBody.put("message",myUrl);
+                          messageImageBody.put("name",fileUri.getLastPathSegment());
+                          messageImageBody.put("type",checker);
+                          messageImageBody.put("from",messageSenderID);
+                          messageImageBody.put("to",messageReceiverID);
+                          messageImageBody.put("messageID",messagePushID);
+                          messageImageBody.put("time",saveCurrentTime);
+                          messageImageBody.put("date",saveCurrentDate);
+
+
+                          Map messageBodyDetails = new HashMap();
+                          messageBodyDetails.put(messageSenderRef + "/" + messagePushID,messageImageBody);
+                          messageBodyDetails.put(messageReceiverRef + "/" + messagePushID,messageImageBody);
+
+                          RootRef.updateChildren(messageBodyDetails).addOnCompleteListener(new OnCompleteListener() {
+                              @Override
+                              public void onComplete(@NonNull Task task) {
+                                  if (task.isSuccessful())
+                                  {
+                                      loadingBar.dismiss();
+                                      Toast.makeText(ChatActivity.this, "Message Sent Successfully..", Toast.LENGTH_SHORT).show();
+                                  }
+                                  else
+                                  {
+                                      loadingBar.dismiss();
+                                      Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                                  }
+
+                                  messageInputText.setText("");
+                              }
+                          });
+                      }
+                    }
+                });
+            }
+            else
+            {
+                loadingBar.dismiss();
+                Toast.makeText(this, "Nothing Selected, Please Select One.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void DisplayLastSeen()
@@ -200,10 +354,17 @@ public class ChatActivity extends AppCompatActivity {
                 });
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+
+    }
+
     private void SendMessage()
     {
         String messageText = messageInputText.getText().toString();
-        
+
         if(TextUtils.isEmpty(messageText))
         {
             Toast.makeText(this, "first write your message...", Toast.LENGTH_SHORT).show();
@@ -240,7 +401,7 @@ public class ChatActivity extends AppCompatActivity {
                     {
                         Toast.makeText(ChatActivity.this, "Message Sent Successfully..", Toast.LENGTH_SHORT).show();
                     }
-                    else 
+                    else
                     {
                         Toast.makeText(ChatActivity.this, "Error", Toast.LENGTH_SHORT).show();
                     }

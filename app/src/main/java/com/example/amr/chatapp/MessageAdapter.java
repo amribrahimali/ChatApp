@@ -50,7 +50,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         Messages messages = userMessagesList.get(i);
 
         String fromUserID = messages.getFrom();
-        String fromMessgaeType = messages.getType();
+        String fromMessageType = messages.getType();
 
         usersRef = FirebaseDatabase.getInstance().getReference().child("Users").child(fromUserID);
 
@@ -79,7 +79,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         messageViewHolder.messageSenderImage.setVisibility(View.GONE);
         messageViewHolder.messageReceiverImage.setVisibility(View.GONE);
 
-        if(fromMessgaeType.equals("text"))
+        if(fromMessageType.equals("text"))
         {
             if(fromUserID.equals(messageSenderID))
             {
@@ -99,6 +99,22 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 messageViewHolder.receiverMessageText.setBackgroundResource(R.drawable.receiver_messages_layout);
                 messageViewHolder.receiverMessageText.setTextColor(Color.BLACK);
                 messageViewHolder.receiverMessageText.setText(messages.getMessage() + "\n \n" + messages.getTime() + " - " + messages.getDate());
+            }
+        }
+        else if(fromMessageType.equals("image"))
+        {
+            if(fromUserID.equals(messageSenderID))
+            {
+                messageViewHolder.messageSenderImage.setVisibility(View.VISIBLE);
+
+                Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageSenderImage);
+            }
+            else
+            {
+                messageViewHolder.messageReceiverImage.setVisibility(View.VISIBLE);
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+
+                Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageReceiverImage);
             }
         }
 
