@@ -1,6 +1,8 @@
 package com.example.amr.chatapp;
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -44,10 +46,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, int i)
+    public void onBindViewHolder(@NonNull final MessageViewHolder messageViewHolder, final int position)
     {
         String messageSenderID = mAuth.getCurrentUser().getUid();
-        Messages messages = userMessagesList.get(i);
+        Messages messages = userMessagesList.get(position);
 
         String fromUserID = messages.getFrom();
         String fromMessageType = messages.getType();
@@ -115,6 +117,38 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
 
                 Picasso.get().load(messages.getMessage()).into(messageViewHolder.messageReceiverImage);
+            }
+        }
+        else if (fromMessageType.equals("pdf") || fromMessageType.equals("docx"))
+        {
+            if(fromUserID.equals(messageSenderID))
+            {
+                messageViewHolder.messageSenderImage.setVisibility(View.VISIBLE);
+                messageViewHolder.messageSenderImage.setBackgroundResource(R.drawable.file);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view)
+                    {
+                        Intent intent = new Intent(Intent.ACTION_VIEW,Uri.parse(userMessagesList.get(position).getMessage()));
+                        messageViewHolder.itemView.getContext().startActivity(intent);
+                    }
+                });
+            }
+            else
+            {
+                messageViewHolder.messageReceiverImage.setVisibility(View.VISIBLE);
+                messageViewHolder.receiverProfileImage.setVisibility(View.VISIBLE);
+                messageViewHolder.messageReceiverImage.setBackgroundResource(R.drawable.file);
+
+                messageViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view)
+                    {
+                        Intent intent = new Intent(Intent.ACTION_VIEW,Uri.parse(userMessagesList.get(position).getMessage()));
+                        messageViewHolder.itemView.getContext().startActivity(intent);
+                    }
+                });
             }
         }
 
