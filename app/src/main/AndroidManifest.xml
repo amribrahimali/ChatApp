@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.amr.chatapp">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -21,8 +21,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".LoginActivity" />
-        <activity android:name=".RegisterActivity"/>
-
+        <activity android:name=".RegisterActivity" />
         <activity
             android:name=".SettingsActivity"
             android:parentActivityName=".MainActivity" />
@@ -35,9 +34,10 @@
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
         <activity android:name=".ProfileActivity" />
-        <activity android:name=".ChatActivity"
-            android:parentActivityName=".MainActivity">
-        </activity>
+        <activity
+            android:name=".ChatActivity"
+            android:parentActivityName=".MainActivity"></activity>
+        <activity android:name=".ImageViewerActivity"></activity>
     </application>
 
 </manifest>
